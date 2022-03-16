@@ -16,11 +16,23 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "Avvia programma",
+      "name": "Start program",
       "skipFiles": [
         "<node_internals>/**"
       ],
       "program": "${workspaceFolder}/dist/index.js"
-    }
+    },
+    {
+			"name": "Launch Debugging",
+      "type": "pwa-node",
+      "request": "launch",
+			"program": "/usr/local/bin/homebridge",
+			"args": [
+				"-D"
+			],
+			"skipFiles": [
+				"<node_internals>/**"
+			]
+		}
   ]
 }
