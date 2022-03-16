@@ -32,14 +32,14 @@ export class FibaroAccessory {
       this.isValid = true;
       // set accessory information
       const properties = this.device.properties || {};
-      const manufacturer = (properties.zwaveCompany || 'IlCato').replace('Fibargroup', 'Fibar Group');
+      const manufacturer = (properties.zwaveCompany || 'Fibar Group').replace('Fibargroup', 'Fibar Group');
 
         this.accessory.getService(this.platform.Service.AccessoryInformation)!
           .setCharacteristic(this.platform.Characteristic.Manufacturer, manufacturer)
           .setCharacteristic(this.platform.Characteristic.Model, `${this.device.type.length > 1 ?
             this.device.type :
             'HomeCenter Bridged Accessory'}`)
-          .setCharacteristic(this.platform.Characteristic.SerialNumber, `${properties.serialNumber || '<unknown>'}`);
+          .setCharacteristic(this.platform.Characteristic.SerialNumber, `DeviceID:${this.device.id}, RoomID:${this.device.roomID}`);
 
         let service;
         let subtype = this.device.id + '----';
