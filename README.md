@@ -24,5 +24,6 @@ Remember to configure the plugin in config.json in your home directory inside th
     - `password` - Password for accessing Fibaro Home Center machine.
 - Optional parameters:
     - `pollerperiod` - Polling interval for querying Fibaro Home Center machine (**0**: disabled, **7**: seconds is the default).
+    - `excludeDeviceID` - Device IDs to be excluded from homekit.
 
-Look for a sample config in [config.json example](https://github.com/oxystin/homebridge-fibaro/blob/master/config.json)s
+Look for a sample config in [config.json example](https://github.com/oxystin/homebridge-fibaro/blob/master/config.json)

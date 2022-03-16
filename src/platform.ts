@@ -69,6 +69,9 @@ export class FibaroHC implements DynamicPlatformPlugin {
     if (this.config.addRoomNameToDeviceName === undefined) {
       this.config.addRoomNameToDeviceName = 'disabled';
     }
+    if (this.config.excludeDeviceID === undefined) {
+      this.config.excludeDeviceID = [];
+    }
 
     this.fibaroClient = new FibaroClient(this.config.url, this.config.host, this.config.username, this.config.password, this.log);
     if (this.fibaroClient.status === false) {
@@ -148,7 +151,8 @@ export class FibaroHC implements DynamicPlatformPlugin {
   LoadAccessories(devices, rooms) {
     this.log.info('Loading accessories');
     devices.map((s, i, a) => {
-      if (s.visible === true && !s.name.startsWith('_')) {
+      const excludeDeviceID:boolean = this.config.excludeDeviceID.indexOf(s.id) < 0;
+      if (excludeDeviceID && s.visible === true && !s.name.startsWith('_')) {
         const siblings = this.findSiblingDevices(s, a);
         if (rooms !== null) {
           // patch device name
