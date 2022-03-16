@@ -36,6 +36,7 @@ export class Poller {
       if (this.pollingUpdateRunning) {
         return;
       }
+      this.platform.log.debug('Start poller... ');
       this.pollingUpdateRunning = true;
 
       try {
@@ -76,7 +77,6 @@ export class Poller {
       } finally {
         this.pollingUpdateRunning = false;
         this.restartPoll(this.pollerPeriod * 1000);
-        this.platform.log.debug('Restarting poller...');
       }
     }
 
@@ -104,12 +104,21 @@ export class Poller {
                 change.value = (change.value - 32) * 5 / 9;
               }
             }
-            const changePropertyValue = change[property];
-            this.platform.log.info(`Updating ${property} for device: `,
-              `${subscription.id}  parameter: ${subscription.characteristic.displayName}, ${property}: ${changePropertyValue}`);
-            const getFunction = this.platform.getFunctions.getFunctionsMapping.get(subscription.characteristic.UUID);
-            if (getFunction && getFunction.function) {
-              getFunction.function.call(this.platform.getFunctions, subscription.characteristic, subscription.service, null, change);
+            const oldValue = subscription.characteristic.value;
+            const typeValue = typeof oldValue;
+            const isNumber = typeValue === 'number';
+            const newValue = this.convertFibaroValueToHomekit(change[property], typeValue);
+            const newValueString = isNumber ? newValue.toFixed(2): String(newValue);
+            const oldValueString = isNumber ? oldValue.toFixed(2): String(oldValue);
+
+            if (oldValue !== newValue) {
+              this.platform.log.info(`Updating ${property} for device:`,
+                `${subscription.id} parameter: ${subscription.characteristic.displayName}`,
+                `${property}: ${oldValueString} -> ${newValueString}`);
+              const getFunction = this.platform.getFunctions.getFunctionsMapping.get(subscription.characteristic.UUID);
+              if (getFunction && getFunction.function) {
+                getFunction.function.call(this.platform.getFunctions, subscription.characteristic, subscription.service, null, change);
+              }
             }
           }
         }
@@ -206,5 +215,19 @@ export class Poller {
           }
         }
       }
+    }
+
+    convertFibaroValueToHomekit (value, type:string) {
+      const booleanValue = {'true':true, 'false':false}[value];
+      const isBoolean:boolean = (booleanValue !== undefined);
+      let convertValue = value;
+
+      if (type === 'number') {
+        convertValue = isBoolean ? Number(booleanValue) : Number(value);
+      } else {
+        convertValue = isBoolean ? booleanValue : Boolean(value);
+      }
+
+      return convertValue;
     }
 }

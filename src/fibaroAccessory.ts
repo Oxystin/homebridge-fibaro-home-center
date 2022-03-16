@@ -316,7 +316,9 @@ export class FibaroAccessory {
         this.subscribeUpdate(service, characteristic, propertyChanged);
       }
       characteristic.on('set', async (value, callback, context) => {
-        this.setCharacteristicValue(value, context, characteristic, service, IDs);
+        if (value !== characteristic.value) {
+          this.setCharacteristicValue(value, context, characteristic, service, IDs);
+        }
         callback();
       });
       characteristic.on('get', async (callback) => {
@@ -339,18 +341,16 @@ export class FibaroAccessory {
           const setFunction = this.platform.setFunctions.setFunctionsMapping.get(characteristic.UUID);
           const platform = this.platform;
           if (setFunction && platform.poller !== undefined) {
-            await this.platform.mutex.runExclusive(async () => {
-              platform.poller?.cancelPoll();
-              setFunction.call(platform.setFunctions, value, context, characteristic, service, IDs);
-              platform.poller?.restartPoll(5000);
-            });
+            platform.poller?.cancelPoll();
+            setFunction.call(platform.setFunctions, value, context, characteristic, service, IDs);
+            platform.poller?.restartPoll(platform.config.pollerperiod * 1000);
           }
         }
       }
     }
 
     async getCharacteristicValue(callback, characteristic, service, accessory, IDs) {
-      this.platform.log.info('Getting value from device: ', `${IDs[0]}  parameter: ${characteristic.displayName}`);
+      this.platform.log.debug('Getting value from device: ', `${IDs[0]}  parameter: ${characteristic.displayName}`);
       try {
         if (!this.platform.fibaroClient) {
           this.platform.log.error('No Fibaro client available.');
