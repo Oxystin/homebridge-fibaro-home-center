@@ -57,6 +57,11 @@ Look for a sample config in [config.json example](https://github.com/oxystin/hom
 
 ## Release notes:
 
+### 1.3.1
+- [FIX] Using ca.cer for https URLs only
+- [NEW] Support for garage door opener additonal states (opening, closing, stopped)
+- [NEW] Added support to Nice roller shutters
+
 ### 1.3.0
 - [FIX] Dimmer issue when controlling device from Homekit
 - [NEW] New mode start debugging
