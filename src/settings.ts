@@ -6,4 +6,4 @@ export const PLATFORM_NAME = 'FibaroHC';
 /**
  * This must match the name of your plugin as defined the package.json
  */
-export const PLUGIN_NAME = 'homebridge-fibaro-home-center';
+export const PLUGIN_NAME = 'homebridge-fibaro';
