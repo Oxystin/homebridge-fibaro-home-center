@@ -42,6 +42,9 @@ export class GetFunctions {
         [(new platform.Characteristic.ContactSensorState()).UUID, { 'function': this.getContactSensorState, 'delay': 0 }],
         [(new platform.Characteristic.LeakDetected()).UUID, { 'function': this.getLeakDetected, 'delay': 0 }],
         [(new platform.Characteristic.SmokeDetected()).UUID, { 'function': this.getSmokeDetected, 'delay': 0 }],
+        [(new platform.Characteristic.CarbonDioxideDetected()).UUID, { 'function': this.CarbonDioxideDetected, 'delay': 0 }],
+        [(new platform.Characteristic.CarbonDioxideLevel()).UUID, { 'function': this.CarbonDioxideLevel, 'delay': 0 }],
+        [(new platform.Characteristic.CarbonDioxidePeakLevel()).UUID, { 'function': this.CarbonDioxidePeakLevel, 'delay': 0 }],
         [(new platform.Characteristic.CarbonMonoxideDetected()).UUID, { 'function': this.getCarbonMonoxideDetected, 'delay': 0 }],
         [(new platform.Characteristic.CarbonMonoxideLevel()).UUID, { 'function': this.getCarbonMonoxideLevel, 'delay': 0 }],
         [(new platform.Characteristic.CarbonMonoxidePeakLevel()).UUID, { 'function': this.getCarbonMonoxidePeakLevel, 'delay': 0 }],
@@ -232,6 +235,33 @@ export class GetFunctions {
       characteristic.updateValue(v === true ?
         this.platform.Characteristic.SmokeDetected.SMOKE_DETECTED :
         this.platform.Characteristic.SmokeDetected.SMOKE_NOT_DETECTED);
+    }
+
+    CarbonDioxideLevel(characteristic, service, IDs, properties) {
+      const level = parseFloat(properties.value);
+      characteristic.updateValue(level);
+    }
+
+    CarbonDioxideDetected(characteristic, service, IDs, properties) {
+      const state = this.platform.Characteristic.CarbonDioxideDetected;
+      const level = parseFloat(properties.value);
+      characteristic.updateValue(level > 1000 ? state.CO2_LEVELS_ABNORMAL : state.CO2_LEVELS_NORMAL);
+    }
+
+    CarbonDioxidePeakLevel(characteristic, service, IDs, properties) {
+      const day = new Date().getUTCDate();
+      const level = parseFloat(properties.value);
+      // Maximum concentration of CO2 during the day
+      if (service.currentDay === day) {
+        if (level > service.peakLevel) {
+          service.peakLevel = level;
+        }
+      } else {
+        service.currentDay = day;
+        service.peakLevel = level;
+      }
+
+      characteristic.updateValue(service.peakLevel);
     }
 
     getCarbonMonoxideDetected(characteristic, service, IDs, properties) {

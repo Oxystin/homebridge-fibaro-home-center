@@ -43,8 +43,9 @@
         "title": "Poller period",
         "type": "integer",
         "required": false,
-        "placeholder": 2,
-        "minimum": 0
+        "placeholder": 7,
+        "minimum": 0,
+        "default": 7
       },
       "switchglobalvariables": {
         "description": "A comma separeted list of Fibaro Home Center global variables acting like a bistable switch",

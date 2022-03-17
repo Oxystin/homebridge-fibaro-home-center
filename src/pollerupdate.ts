@@ -76,14 +76,14 @@ export class Poller {
         }
       } finally {
         this.pollingUpdateRunning = false;
-        this.restartPoll(this.pollerPeriod * 1000);
+        this.restartPoll(this.pollerPeriod);
       }
     }
 
     restartPoll(delay) {
       this.timeout = setTimeout( () => {
         this.poll();
-      }, delay);
+      }, delay * 1000);
     }
 
     cancelPoll() {
@@ -93,31 +93,32 @@ export class Poller {
     manageValue(change) {
       for (let i = 0; i < this.platform.updateSubscriptions.length; i++) {
         const subscription = this.platform.updateSubscriptions[i];
-        if (!(subscription.service instanceof this.platform.Service.BatteryService) && subscription.characteristic.displayName !== 'Name') {
+        const characteristic = subscription.characteristic;
+        if (!(subscription.service instanceof this.platform.Service.BatteryService) && characteristic.displayName !== 'Name') {
 
           const property = subscription.property;
           const id = parseInt(subscription.id);
           if (id === change.id &&
                     ((property === 'value' && change.value !== undefined) || (property === 'value2' && change.value2 !== undefined))) {
             if (this.platform.config.FibaroTemperatureUnit === 'F') {
-              if (subscription.characteristic.displayName === 'Current Temperature') {
+              if (characteristic.displayName === 'Current Temperature') {
                 change.value = (change.value - 32) * 5 / 9;
               }
             }
-            const oldValue = subscription.characteristic.value;
-            const typeValue = typeof oldValue;
-            const isNumber = typeValue === 'number';
-            const newValue = this.convertFibaroValueToHomekit(change[property], typeValue);
-            const newValueString = isNumber ? newValue.toFixed(2): String(newValue);
-            const oldValueString = isNumber ? oldValue.toFixed(2): String(oldValue);
+            const oldValue = characteristic.value;
+            const newValue = this.convertFibaroValueToHomekit(change[property], typeof oldValue);
 
             if (oldValue !== newValue) {
-              this.platform.log.info(`Updating ${property} for device:`,
-                `${subscription.id} parameter: ${subscription.characteristic.displayName}`,
-                `${property}: ${oldValueString} -> ${newValueString}`);
-              const getFunction = this.platform.getFunctions.getFunctionsMapping.get(subscription.characteristic.UUID);
+              const getFunction = this.platform.getFunctions.getFunctionsMapping.get(characteristic.UUID);
               if (getFunction && getFunction.function) {
-                getFunction.function.call(this.platform.getFunctions, subscription.characteristic, subscription.service, null, change);
+                getFunction.function.call(this.platform.getFunctions, characteristic, subscription.service, null, change);
+                if (oldValue !== characteristic.value) {
+                  this.platform.log.info(
+                    `Updating ${property} for device: ${subscription.id} `,
+                    `parameter: ${characteristic.displayName}`,
+                    `${property}: ${oldValue} → ${characteristic.value}`,
+                  );
+                }
               }
             }
           }
