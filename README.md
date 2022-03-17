@@ -1,35 +1,29 @@
-# homebridge-fibaro-home-center
-[![npm version](https://badge.fury.io/js/homebridge-fibaro-home-center.svg)](https://badge.fury.io/js/homebridge-fibaro-home-center)
-[![Downloads](https://img.shields.io/npm/dt/homebridge-fibaro-home-center)](https://www.npmjs.com/package/homebridge-fibaro-home-center)
-[![Homebridge Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/38Dpux)
-[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
+# homebridge-fibaro
 
-[![Buy me a cofee](https://cdn.buymeacoffee.com/buttons/default-orange.png)](https://www.buymeacoffee.com/ilcato)
-
-Homebridge plugin for Fibaro Home Center (2, 2 Lite, 3, 3 Lite)
+Homebridge plugin for Fibaro Home Center. Based on [homebridge-fibaro-home-center](https://github.com/ilcato/homebridge-fibaro-home-center) code.
 
 # Installation
-Follow the instruction in [homebridge](https://www.npmjs.com/package/homebridge) for the homebridge server installation.
-The plugin is published through [NPM](https://www.npmjs.com/package/homebridge-fibaro-home-center) and should be installed "globally" by typing:
 
-    npm install -g homebridge-fibaro-home-center
+Install this plugin by running:
+```
+npm install -g homebridge-fibaro
+```
+or use the terminal to install the developer version:
+```
+npm install --save https://github.com/oxystin/homebridge-fibaro.git#dev
+```
     
 # Configuration
 Remember to configure the plugin in config.json in your home directory inside the .homebridge directory. Configuration parameters:
-+ "url": "PUT URL OF YOUR HOME CENTER HERE CONTAINING PROTOCOL AND NAME, E.G.: https://hc-00000XXX.local, ca.cer file in the same folder as config.json"
-+ "host": "PUT IP ADDRESS OF YOUR HOME CENTER HERE. IF URL PARAMETER IS PRESENT THIS PARAMETER IS IGNORED"
-+ "username": "PUT USERNAME OF YOUR HOME CENTER HERE"
-+ "password": "PUT PASSWORD OF YOUR HOME CENTER HERE"
-+ "pollerperiod": "PUT 0 FOR DISABLING POLLING, 1 - 100 INTERVAL IN SECONDS. 2 SECONDS IS THE DEFAULT"
-+ "thermostattimeout": "PUT THE NUMBER OF SECONDS FOR THE THERMOSTAT TIMEOUT, DEFAULT: 7200 (2 HOURS)
-+ "switchglobalvariables": "PUT A COMMA SEPARATED LIST OF HOME CENTER GLOBAL VARIABLES ACTING LIKE A BISTABLE SWITCH"
-+ "dimmerglobalvariables": "PUT A COMMA SEPARATED LIST OF HOME CENTER GLOBAL VARIABLES ACTING LIKE A DIMMER"
-+ "securitysystem": "PUT enabled OR disabled IN ORDER TO MANAGE THE AVAILABILITY OF THE SECURITY SYSTEM"
-+ "addRoomNameToDeviceName" : "PUT enabled OR disabled IN ORDER TO ADD THE ROOM NAME TO DEVIVE NAME. DEFAULT disabled"
+- Required parameters:
+    - `platform` - Always "FibaroHC".
+    - `name` - Plugin name as displayed in the homebridge log.
+    - `host` - IP address (or hostname) of the Fibaro Home Center machine. Ignored if `url` is present.
+    - `url` - URL of the Fibaro Home Center machine. **Example:** https://hc-00000XXX.local
+    - `username` - Username for accessing Fibaro Home Center machine.
+    - `password` - Password for accessing Fibaro Home Center machine.
+- Optional parameters:
+    - `pollerperiod` - Polling interval for querying Fibaro Home Center machine (**0**: disabled, **7**: seconds is the default).
+    - `excludeDeviceID` - Device IDs to be excluded from homekit.
 
-Look for a sample config in [config.json example](https://github.com/ilcato/homebridge-Fibaro-home-center/blob/master/config.json)
-
-
-# Last release notes
-Version 1.2.6
-+ rollback 1.2.5
+Look for a sample config in [config.json example](https://github.com/oxystin/homebridge-fibaro/blob/master/config.json)

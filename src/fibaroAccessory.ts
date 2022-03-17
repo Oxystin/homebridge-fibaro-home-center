@@ -16,6 +16,12 @@
 import { PlatformAccessory, HAPStatus } from 'homebridge';
 import { FibaroHC } from './platform';
 
+type Options = {
+  subtype?: string;
+  peakLevel?: number;
+  currentDay?: number;
+};
+
 export class FibaroAccessory {
     mainService;
     batteryService;
@@ -32,17 +38,17 @@ export class FibaroAccessory {
       this.isValid = true;
       // set accessory information
       const properties = this.device.properties || {};
-      const manufacturer = (properties.zwaveCompany || 'IlCato').replace('Fibargroup', 'Fibar Group');
+      const manufacturer = (properties.zwaveCompany || 'Fibar Group').replace('Fibargroup', 'Fibar Group');
 
         this.accessory.getService(this.platform.Service.AccessoryInformation)!
           .setCharacteristic(this.platform.Characteristic.Manufacturer, manufacturer)
           .setCharacteristic(this.platform.Characteristic.Model, `${this.device.type.length > 1 ?
             this.device.type :
             'HomeCenter Bridged Accessory'}`)
-          .setCharacteristic(this.platform.Characteristic.SerialNumber, `${properties.serialNumber || '<unknown>'}`);
+          .setCharacteristic(this.platform.Characteristic.SerialNumber, `DeviceID:${this.device.id}, RoomID:${this.device.roomID}`);
 
         let service;
-        let subtype = this.device.id + '----';
+        const options:Options = {subtype: this.device.id + '----'};
 
         switch (this.device.type) {
           case 'com.fibaro.multilevelSwitch':
@@ -73,7 +79,7 @@ export class FibaroAccessory {
                 break;
               case 25: // Video gate open
                 service = this.platform.Service.LockMechanism;
-                subtype = device.id + '--' + 'LOCK';
+                options.subtype = device.id + '--' + 'LOCK';
                 this.mainCharacteristics = [this.platform.Characteristic.LockCurrentState, this.platform.Characteristic.LockTargetState];
                 break;
               default:
@@ -148,6 +154,21 @@ export class FibaroAccessory {
                       this.platform.Characteristic.CarbonMonoxideLevel,
                       this.platform.Characteristic.CarbonMonoxidePeakLevel, this.platform.Characteristic.BatteryLevel];
             break;
+          case 'com.fibaro.multilevelSensor':
+            if (device.properties.userDescription === 'CarbonDioxideSensor') {
+              service = this.platform.Service.CarbonDioxideSensor;
+              options.peakLevel = 0;
+              options.currentDay = new Date().getUTCDate();
+              this.mainCharacteristics = [
+                this.platform.Characteristic.CarbonDioxideLevel,
+                this.platform.Characteristic.CarbonDioxideDetected,
+                this.platform.Characteristic.CarbonDioxidePeakLevel,
+              ];
+            } else {
+              this.isValid = false;
+              return;
+            }
+            break;
           case 'com.fibaro.lightSensor':
             service = this.platform.Service.LightSensor;
             this.mainCharacteristics = [this.platform.Characteristic.CurrentAmbientLightLevel];
@@ -180,12 +201,12 @@ export class FibaroAccessory {
             this.mainCharacteristics =
                     [this.platform.Characteristic.SecuritySystemCurrentState,
                       this.platform.Characteristic.SecuritySystemTargetState];
-            subtype = '0--';
+            options.subtype = '0--';
             break;
           case 'scene':
             service = this.platform.Service.Switch;
             this.mainCharacteristics = [this.platform.Characteristic.On];
-            subtype = device.id + '--SC';
+            options.subtype= device.id + '--SC';
             break;
           case 'climateZone':
             service = this.platform.Service.Thermostat;
@@ -195,7 +216,7 @@ export class FibaroAccessory {
                       this.platform.Characteristic.CurrentHeatingCoolingState,
                       this.platform.Characteristic.TargetHeatingCoolingState,
                       this.platform.Characteristic.TemperatureDisplayUnits];
-            subtype = device.id + '--CZ';
+            options.subtype = device.id + '--CZ';
             break;
           case 'heatingZone':
             service = this.platform.Service.Thermostat;
@@ -205,17 +226,17 @@ export class FibaroAccessory {
                         this.platform.Characteristic.CurrentHeatingCoolingState,
                         this.platform.Characteristic.TargetHeatingCoolingState,
                         this.platform.Characteristic.TemperatureDisplayUnits];
-            subtype = device.id + '--HZ';
+            options.subtype = device.id + '--HZ';
             break;
           case 'G':
             service = this.platform.Service.Switch;
             this.mainCharacteristics = [this.platform.Characteristic.On];
-            subtype = this.device.type + '-' + this.device.name + '-';
+            options.subtype = this.device.type + '-' + this.device.name + '-';
             break;
           case 'D':
             service = this.platform.Service.Lightbulb;
             this.mainCharacteristics = [this.platform.Characteristic.On, this.platform.Characteristic.Brightness];
-            subtype = this.device.type + '-' + this.device.name + '-';
+            options.subtype = this.device.type + '-' + this.device.name + '-';
             break;
           default:
             this.isValid = false;
@@ -226,8 +247,8 @@ export class FibaroAccessory {
         this.mainService = this.accessory.getService(service);
         if (!this.mainService) {
           this.mainService = this.accessory.addService(new service(this.device.name));
-          this.mainService.subtype = subtype;
         }
+        this.mainService = Object.assign(this.mainService, options);
         this.bindCharactersticsEvent(this.mainService, this.mainCharacteristics);
 
         if (this.device.interfaces && this.device.interfaces.includes('battery')) {
@@ -316,7 +337,9 @@ export class FibaroAccessory {
         this.subscribeUpdate(service, characteristic, propertyChanged);
       }
       characteristic.on('set', async (value, callback, context) => {
-        this.setCharacteristicValue(value, context, characteristic, service, IDs);
+        if (value !== characteristic.value) {
+          this.setCharacteristicValue(value, context, characteristic, service, IDs);
+        }
         callback();
       });
       characteristic.on('get', async (callback) => {
@@ -339,18 +362,16 @@ export class FibaroAccessory {
           const setFunction = this.platform.setFunctions.setFunctionsMapping.get(characteristic.UUID);
           const platform = this.platform;
           if (setFunction && platform.poller !== undefined) {
-            await this.platform.mutex.runExclusive(async () => {
-              platform.poller?.cancelPoll();
-              setFunction.call(platform.setFunctions, value, context, characteristic, service, IDs);
-              platform.poller?.restartPoll(5000);
-            });
+            platform.poller?.cancelPoll();
+            setFunction.call(platform.setFunctions, value, context, characteristic, service, IDs);
+            platform.poller?.restartPoll(platform.config.pollerperiod);
           }
         }
       }
     }
 
     async getCharacteristicValue(callback, characteristic, service, accessory, IDs) {
-      this.platform.log.info('Getting value from device: ', `${IDs[0]}  parameter: ${characteristic.displayName}`);
+      this.platform.log.debug('Getting value from device: ', `${IDs[0]}  parameter: ${characteristic.displayName}`);
       try {
         if (!this.platform.fibaroClient) {
           this.platform.log.error('No Fibaro client available.');

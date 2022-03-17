@@ -36,6 +36,7 @@ export class Poller {
       if (this.pollingUpdateRunning) {
         return;
       }
+      this.platform.log.debug('Start poller... ');
       this.pollingUpdateRunning = true;
 
       try {
@@ -75,15 +76,14 @@ export class Poller {
         }
       } finally {
         this.pollingUpdateRunning = false;
-        this.restartPoll(this.pollerPeriod * 1000);
-        this.platform.log.debug('Restarting poller...');
+        this.restartPoll(this.pollerPeriod);
       }
     }
 
     restartPoll(delay) {
       this.timeout = setTimeout( () => {
         this.poll();
-      }, delay);
+      }, delay * 1000);
     }
 
     cancelPoll() {
@@ -93,23 +93,33 @@ export class Poller {
     manageValue(change) {
       for (let i = 0; i < this.platform.updateSubscriptions.length; i++) {
         const subscription = this.platform.updateSubscriptions[i];
-        if (!(subscription.service instanceof this.platform.Service.BatteryService) && subscription.characteristic.displayName !== 'Name') {
+        const characteristic = subscription.characteristic;
+        if (!(subscription.service instanceof this.platform.Service.BatteryService) && characteristic.displayName !== 'Name') {
 
           const property = subscription.property;
           const id = parseInt(subscription.id);
           if (id === change.id &&
                     ((property === 'value' && change.value !== undefined) || (property === 'value2' && change.value2 !== undefined))) {
             if (this.platform.config.FibaroTemperatureUnit === 'F') {
-              if (subscription.characteristic.displayName === 'Current Temperature') {
+              if (characteristic.displayName === 'Current Temperature') {
                 change.value = (change.value - 32) * 5 / 9;
               }
             }
-            const changePropertyValue = change[property];
-            this.platform.log.info(`Updating ${property} for device: `,
-              `${subscription.id}  parameter: ${subscription.characteristic.displayName}, ${property}: ${changePropertyValue}`);
-            const getFunction = this.platform.getFunctions.getFunctionsMapping.get(subscription.characteristic.UUID);
-            if (getFunction && getFunction.function) {
-              getFunction.function.call(this.platform.getFunctions, subscription.characteristic, subscription.service, null, change);
+            const oldValue = characteristic.value;
+            const newValue = this.convertFibaroValueToHomekit(change[property], typeof oldValue);
+
+            if (oldValue !== newValue) {
+              const getFunction = this.platform.getFunctions.getFunctionsMapping.get(characteristic.UUID);
+              if (getFunction && getFunction.function) {
+                getFunction.function.call(this.platform.getFunctions, characteristic, subscription.service, null, change);
+                if (oldValue !== characteristic.value) {
+                  this.platform.log.info(
+                    `Updating ${property} for device: ${subscription.id} `,
+                    `parameter: ${characteristic.displayName}`,
+                    `${property}: ${oldValue} → ${characteristic.value}`,
+                  );
+                }
+              }
             }
           }
         }
@@ -206,5 +216,19 @@ export class Poller {
           }
         }
       }
+    }
+
+    convertFibaroValueToHomekit (value, type:string) {
+      const booleanValue = {'true':true, 'false':false}[value];
+      const isBoolean:boolean = (booleanValue !== undefined);
+      let convertValue = value;
+
+      if (type === 'number') {
+        convertValue = isBoolean ? Number(booleanValue) : Number(value);
+      } else {
+        convertValue = isBoolean ? booleanValue : Boolean(value);
+      }
+
+      return convertValue;
     }
 }

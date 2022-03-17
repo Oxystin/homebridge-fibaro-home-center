@@ -2,13 +2,13 @@
   "pluginAlias": "FibaroHC",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "Homebridge plugin for Fibaro Home Center.",
+  "headerDisplay": "Homebridge plugin for Fibaro Home Center",
   "footerDisplay": "For additonal information see [wiki](https://github.com/ilcato/homebridge-fibaro-home-center/wiki).",
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "description": "Plugin name as displayed in the homebridge log.",
+        "description": "Plugin name as displayed in the homebridge log",
         "title": "Name",
         "type": "string",
         "required": true,
@@ -27,69 +27,89 @@
         "required": false
       },
       "username": {
-        "description": "Username for accessing Fibaro Home Center machine.",
+        "description": "Username for accessing Fibaro Home Center machine",
         "title": "Username",
         "type": "string",
         "required": true
       },
       "password": {
-        "description": "Password for accessing Fibaro Home Center machine.",
+        "description": "Password for accessing Fibaro Home Center machine",
         "title": "Password",
         "type": "string",
         "required": true
       },
       "pollerperiod": {
-        "description": "Polling interval for querying Fibaro Home Center machine (0: disabled).",
+        "description": "Polling interval for querying Fibaro Home Center machine (0: disabled)",
         "title": "Poller period",
         "type": "integer",
         "required": false,
-        "placeholder": 2,
-        "minimum": 0
+        "placeholder": 7,
+        "minimum": 0,
+        "default": 7
       },
       "switchglobalvariables": {
-        "description": "A comma separeted list of Fibaro Home Center global variables acting like a bistable switch.",
+        "description": "A comma separeted list of Fibaro Home Center global variables acting like a bistable switch",
         "title": "Global variables switches",
         "type": "string",
         "required": false
       },
       "dimmerglobalvariables": {
-        "description": "A comma separeted list of Fibaro Home Center global variables acting like a dimmer.",
+        "description": "A comma separeted list of Fibaro Home Center global variables acting like a dimmer",
         "title": "Global variables switches",
         "type": "string",
         "required": false
       },
       "securitysystem": {
-        "description": "Enable or disable the Security system, see wiki for detail.",
+        "description": "Enable or disable the Security system, see wiki for detail",
         "title": "Security system",
         "type": "string",
         "oneOf": [
           {
             "title": "Enabled",
-            "enum": ["enabled"]
+            "enum": [
+              "enabled"
+            ]
           },
           {
             "title": "Disabled",
-            "enum": ["disabled"]
+            "enum": [
+              "disabled"
+            ]
           }
         ],
         "default": "disabled"
       },
       "addRoomNameToDeviceName": {
-        "description": "Enable or disable adding the Room name to the device name.",
+        "description": "Enable or disable adding the Room name to the device name",
         "title": "Add room name to devices",
         "type": "string",
         "oneOf": [
           {
             "title": "Enabled",
-            "enum": ["enabled"]
+            "enum": [
+              "enabled"
+            ]
           },
           {
             "title": "Disabled",
-            "enum": ["disabled"]
+            "enum": [
+              "disabled"
+            ]
           }
         ],
         "default": "disabled"
-      }      
+      },
+      "excludeDeviceID": {
+        "description": "Device IDs to be excluded from homekit",
+        "title": "Excluded devices",
+        "type": "array",
+        "required": false,
+        "expandable": true,
+        "expanded": false,
+        "items": {
+          "type": "number"
+        }
+      }
     }
   },
   "form": null,

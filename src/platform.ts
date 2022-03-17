@@ -6,10 +6,6 @@ import { FibaroClient } from './fibaro-api';
 import { SetFunctions } from './setFunctions';
 import { GetFunctions } from './getFunctions';
 import { Poller } from './pollerupdate';
-import { Mutex } from 'async-mutex';
-
-const defaultPollerPeriod = 5;
-const timeOffset = 2 * 3600;
 
 /**
  * HomebridgePlatform
@@ -31,7 +27,6 @@ export class FibaroHC implements DynamicPlatformPlugin {
   public fibaroClient?: FibaroClient;
   public setFunctions?: SetFunctions;
   public getFunctions?: GetFunctions;
-  public mutex;
 
 
   constructor(
@@ -42,35 +37,37 @@ export class FibaroHC implements DynamicPlatformPlugin {
     this.updateSubscriptions = [];
     this.scenes = {};
     this.climateZones = {};
-    this.mutex = new Mutex();
     this.info = {};
 
     if (!config) {
       this.log.error('Fibaro HC configuration: cannot find configuration for the plugin');
       return;
     }
-    let pollerPeriod = this.config.pollerperiod ? parseInt(this.config.pollerperiod) : defaultPollerPeriod;
-    if (isNaN(pollerPeriod) || pollerPeriod < 0 || pollerPeriod > 100) {
-      pollerPeriod = defaultPollerPeriod;
-    }
-    if (this.config.thermostattimeout === undefined) {
-      this.config.thermostattimeout = timeOffset.toString();
-    }
-    if (this.config.switchglobalvariables === undefined) {
-      this.config.switchglobalvariables = '';
-    }
-    if (this.config.dimmerglobalvariables === undefined) {
-      this.config.dimmerglobalvariables = '';
-    }
-    if (this.config.securitysystem === undefined ||
-      (this.config.securitysystem !== 'enabled' && this.config.securitysystem !== 'disabled')) {
+
+    const defaultConfig = {
+      pollerperiod: 7,
+      excludeDeviceID: [],
+      thermostattimeout: '7200',
+      switchglobalvariables: '',
+      dimmerglobalvariables: '',
+      securitysystem: 'disabled',
+      FibaroTemperatureUnit: 'C',
+      addRoomNameToDeviceName: 'disabled',
+    };
+
+    this.config.pollerperiod = isNaN(parseInt(this.config.pollerperiod)) ? defaultConfig.pollerperiod : Math.abs(this.config.pollerperiod);
+    this.config = Object.assign(defaultConfig, config);
+
+    if (!{'enabled':1, 'disabled':1}[this.config.securitysystem]) {
       this.config.securitysystem = 'disabled';
     }
-    if (this.config.FibaroTemperatureUnit === undefined) {
-      this.config.FibaroTemperatureUnit = 'C';
-    }
-    if (this.config.addRoomNameToDeviceName === undefined) {
+
+    if (!{'enabled':1, 'disabled':1}[this.config.addRoomNameToDeviceName]) {
       this.config.addRoomNameToDeviceName = 'disabled';
+    }
+
+    if (!{'F':1, 'C':1}[this.config.FibaroTemperatureUnit]) {
+      this.config.FibaroTemperatureUnit = 'C';
     }
 
     this.fibaroClient = new FibaroClient(this.config.url, this.config.host, this.config.username, this.config.password, this.log);
@@ -78,8 +75,8 @@ export class FibaroHC implements DynamicPlatformPlugin {
       this.log.error('Cannot connect to Fibaro Home Center. Check credentials, url/host or ca.cer file');
       return;
     }
-    if (pollerPeriod !== 0) {
-      this.poller = new Poller(this, pollerPeriod);
+    if (this.config.pollerperiod !== 0) {
+      this.poller = new Poller(this, this.config.pollerperiod);
     }
 
     this.getFunctions = new GetFunctions(this);
@@ -151,7 +148,8 @@ export class FibaroHC implements DynamicPlatformPlugin {
   LoadAccessories(devices, rooms) {
     this.log.info('Loading accessories');
     devices.map((s, i, a) => {
-      if (s.visible === true && !s.name.startsWith('_')) {
+      const excludeDeviceID:boolean = this.config.excludeDeviceID.indexOf(s.id) < 0;
+      if (excludeDeviceID && s.visible === true && !s.name.startsWith('_')) {
         const siblings = this.findSiblingDevices(s, a);
         if (rooms !== null) {
           // patch device name
