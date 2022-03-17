@@ -16,7 +16,7 @@
             "url": "https://hc-00000XXX.local",
             "username": "admin",
             "password": "***********",
-            "pollerperiod": "10",
+            "pollerperiod": 10,
             "excludeDeviceID": [
                 145,
                 146,
@@ -24,7 +24,6 @@
                 216
             ]
         }
-
     ],
 
     "accessories": [
