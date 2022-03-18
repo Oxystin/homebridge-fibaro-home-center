@@ -1,6 +1,19 @@
-# homebridge-fibaro
+<p align="center">
+  <a href="https://github.com/oxystin/homebridge-fibaro"><img src="https://raw.githubusercontent.com/oxystin/homebridge-fibaro/main/img/fibaro-device.png" width="540"></a>
+</p>
 
-Homebridge plugin for Fibaro Home Center. Based on [homebridge-fibaro-home-center](https://github.com/ilcato/homebridge-fibaro-home-center) code.
+<span align="center">
+
+# Homebridge Fibaro
+[![npm](https://badgen.net/npm/dt/homebridge-fibaro?color=purple)](https://www.npmjs.com/package/homebridge-fibaro) 
+[![npm](https://badgen.net/npm/v/homebridge-fibaro?color=purple)](https://www.npmjs.com/package/homebridge-fibaro)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/oxystin/homebridge-fibaro.svg)](https://github.com/oxystin/homebridge-fibaro/pulls)
+[![GitHub issues](https://img.shields.io/github/issues/oxystin/homebridge-fibaro.svg)](https://github.com/oxystin/homebridge-fibaro/issues)
+
+Homebridge plugin for Fibaro Home Center
+
+</span>
+
 
 ## Installation
 
@@ -10,11 +23,6 @@ Install this plugin by running:
 npm install -g homebridge-fibaro
 ```
 
-or use the terminal to install the developer version:
-
-```
-npm install --save https://github.com/oxystin/homebridge-fibaro.git#dev
-```
 
 ## Configuration
 
